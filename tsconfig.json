@@ -4,11 +4,13 @@
     "module": "nodenext",
     "target": "esnext",
     "types": ["node"],
-
-    // Other Outputs
-    "sourceMap": true,
+    
+    // Output Settings
+    "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
+    "sourceMap": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -30,5 +32,5 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

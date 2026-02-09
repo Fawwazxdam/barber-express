@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/server.ts",
+    "build": "tsc",
     "db:push": "npx drizzle-kit push",
     "db:seed": "ts-node src/db/seed.ts",
     "db:migrate": "npx drizzle-kit migrate",
