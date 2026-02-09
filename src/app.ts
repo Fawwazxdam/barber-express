@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
 import authRoutes from "./routes/auth.route";
 import { servicesRouter } from "./routes/services.route";
 import { usersRouter } from "./routes/users.route";
@@ -18,6 +19,9 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (_req, res) => {
   res.send("hello world");

@@ -18,7 +18,14 @@ export const UsersController = {
       }
 
       const { email, name, password } = req.body;
-      const result = await UsersService.createBarber({ email, name, password });
+      const image = req.file as Express.Multer.File | undefined;
+
+      const createDto: { email: string; name: string; password: string; image?: Express.Multer.File } = { email, name, password };
+      if (image) {
+        createDto.image = image;
+      }
+
+      const result = await UsersService.createBarber(createDto);
 
       return res.status(result.status).json({ message: result.message });
     } catch (error) {
@@ -41,6 +48,7 @@ export const UsersController = {
     try {
       const id = req.params.id as string;
       const result = await UsersService.getBarberById(id);
+      console.log(result);
       return res.status(result.status).json(result);
     } catch (error) {
       console.error(error);
@@ -63,8 +71,14 @@ export const UsersController = {
 
       const id = req.params.id as string;
       const { name, password } = req.body;
+      const image = req.file as Express.Multer.File;
 
-      const result = await UsersService.updateBarber(id, { name, password });
+      const updateDto: { name?: string; password?: string; image?: Express.Multer.File } = {};
+      if (name) updateDto.name = name;
+      if (password) updateDto.password = password;
+      if (image) updateDto.image = image;
+
+      const result = await UsersService.updateBarber(id, updateDto);
 
       return res.status(result.status).json({ message: result.message });
     } catch (error) {
