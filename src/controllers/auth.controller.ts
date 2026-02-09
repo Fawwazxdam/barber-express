@@ -34,8 +34,8 @@ export async function login(req: Request, res: Response) {
 
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: false, // true kalau HTTPS
-    sameSite: "lax",
+    secure: true, // true kalau HTTPS
+    sameSite: "none",
   });
 
   return res.json({
