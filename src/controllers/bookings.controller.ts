@@ -119,4 +119,30 @@ export const BookingsController = {
       return res.status(500).json({ message: "Failed to fetch available slots" });
     }
   },
+
+  async getDashboardStats(req: Request, res: Response) {
+    try {
+      const result = await BookingsService.getDashboardStats();
+      return res.status(result.status).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  },
+
+  async getBarberDashboardStats(req: Request, res: Response) {
+    try {
+      const { barberId } = req.query;
+
+      if (!barberId || typeof barberId !== "string") {
+        return res.status(400).json({ message: "barberId is required" });
+      }
+
+      const result = await BookingsService.getBarberDashboardStats(barberId);
+      return res.status(result.status).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch barber dashboard stats" });
+    }
+  },
 };

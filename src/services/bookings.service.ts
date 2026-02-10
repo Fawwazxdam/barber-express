@@ -112,4 +112,42 @@ export const BookingsService = {
       })),
     };
   },
+
+  async getDashboardStats() {
+    const [todayBookings, completedBookingsToday, topHaircuts] = await Promise.all([
+      BookingsRepository.countBookingsToday(),
+      BookingsRepository.countCompletedBookingsToday(),
+      BookingsRepository.getTopHaircutsThisWeek(5),
+    ]);
+
+    return {
+      status: 200,
+      data: {
+        todayBookings,
+        completedBookingsToday,
+        topHaircuts,
+      },
+    };
+  },
+
+  async getBarberDashboardStats(barberId: string) {
+    if (!barberId) {
+      return { status: 400, message: "barberId is required" };
+    }
+
+    const [todayBookings, completedBookingsToday, pendingConfirmations] = await Promise.all([
+      BookingsRepository.countBookingsByBarberToday(barberId),
+      BookingsRepository.countCompletedBookingsByBarberToday(barberId),
+      BookingsRepository.getPendingConfirmationsByBarberToday(barberId),
+    ]);
+
+    return {
+      status: 200,
+      data: {
+        todayBookings,
+        completedBookingsToday,
+        pendingConfirmations,
+      },
+    };
+  },
 };

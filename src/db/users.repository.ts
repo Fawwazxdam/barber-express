@@ -31,6 +31,7 @@ export const UsersRepository = {
         id: users.id,
         name: users.name,
         email: users.email,
+        description: users.description,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -43,6 +44,7 @@ export const UsersRepository = {
         id: users.id,
         name: users.name,
         email: users.email,
+        description: users.description,
         createdAt: users.createdAt,
       })
       .from(users)

@@ -9,6 +9,7 @@ export const UsersService = {
     email: string;
     name: string;
     password: string;
+    description?: string;
     image?: Express.Multer.File;
   }) {
     const existing = await UsersRepository.findByEmail(dto.email);
@@ -23,6 +24,7 @@ export const UsersService = {
       name: dto.name,
       password: hashed,
       role: "BARBER",
+      description: dto.description,
     });
 
     if (!userResult[0]) {

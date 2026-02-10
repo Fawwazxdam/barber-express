@@ -183,4 +183,168 @@ export const BookingsRepository = {
       .where(eq(bookings.id, bookingId))
       .returning();
   },
+
+  async countBookingsToday() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow)
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async countCompletedBookingsToday() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow),
+          eq(bookings.status, "completed")
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async getTopHaircutsThisWeek(limit: number = 5) {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const result = await db
+      .select({
+        serviceId: services.id,
+        serviceName: services.name,
+        count: sql<number>`count(*)`,
+      })
+      .from(bookings)
+      .innerJoin(services, eq(bookings.serviceId, services.id))
+      .where(
+        and(
+          gte(bookings.bookingDate, startOfWeek),
+          eq(bookings.status, "completed")
+        )
+      )
+      .groupBy(services.id, services.name)
+      .orderBy(sql`count(*) DESC`)
+      .limit(limit);
+
+    return result;
+  },
+
+  async countBookingsByBarberToday(barberId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.barberId, barberId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow)
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async countCompletedBookingsByBarberToday(barberId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.barberId, barberId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow),
+          eq(bookings.status, "completed")
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async countPendingConfirmationsByBarberToday(barberId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.barberId, barberId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow),
+          inArray(bookings.status, ["pending", "confirmed"])
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async getPendingConfirmationsByBarberToday(barberId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return db
+      .select({
+        id: bookings.id,
+        customerName: bookings.customerName,
+        customerPhone: bookings.customerPhone,
+        serviceName: services.name,
+        servicePrice: services.price,
+        bookingDate: bookings.bookingDate,
+        status: bookings.status,
+        duration: services.duration,
+      })
+      .from(bookings)
+      .innerJoin(services, eq(bookings.serviceId, services.id))
+      .where(
+        and(
+          eq(bookings.barberId, barberId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow),
+          inArray(bookings.status, ["pending", "confirmed"])
+        )
+      )
+      .orderBy(bookings.bookingDate);
+  },
 };
