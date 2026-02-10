@@ -34,8 +34,10 @@ export async function login(req: Request, res: Response) {
 
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: true, // true kalau HTTPS
-    sameSite: "none",
+    secure: process.env.NODE_ENV === "production" ? true : false, // true kalau HTTPS
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    domain: process.env.NODE_ENV === "production" ? ".magentaa.space" : undefined,
+    path: "/",
   });
 
   return res.json({
