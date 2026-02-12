@@ -6,7 +6,7 @@ import { users } from "./schema";
 import { eq } from "drizzle-orm";
 
 async function seed() {
-  const password = await bcrypt.hash("password123", 10);
+  const password = await bcrypt.hash("password", 10);
 
   // Check if admin user already exists
   const existingUser = await db
