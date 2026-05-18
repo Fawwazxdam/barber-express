@@ -347,4 +347,47 @@ export const BookingsRepository = {
       )
       .orderBy(bookings.bookingDate);
   },
+
+  async countBookingsByTenantToday(tenantId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.tenantId, tenantId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow)
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
+
+  async countPendingBookingsByTenant(tenantId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.tenantId, tenantId),
+          gte(bookings.bookingDate, today),
+          lt(bookings.bookingDate, tomorrow),
+          inArray(bookings.status, ["pending", "confirmed"])
+        )
+      );
+
+    return Number(result[0]?.count || 0);
+  },
 };

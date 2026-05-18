@@ -1,40 +1,20 @@
 // src/controllers/auth.controller.ts
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import { db } from "../db";
-import { users } from "../db/schema";
-import { signToken } from "../utils/jwt";
-import { eq } from "drizzle-orm";
+import { AuthService } from "../services/auth.service";
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
 
-  // Cari user berdasarkan email
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+  const result = await AuthService.login({ email, password });
 
-  const user = result[0];
-
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
+  if (result.status !== 200 || !result.data) {
+    return res.status(result.status).json({ message: result.message });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  const token = signToken({
-    id: user.id,
-    role: user.role,
-  });
-
-  res.cookie("access_token", token, {
+  // Set cookie with access token
+  res.cookie("access_token", result.data.accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" ? true : false, // true kalau HTTPS
+    secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     domain: process.env.NODE_ENV === "production" ? ".magentaa.space" : undefined,
     path: "/",
@@ -42,18 +22,56 @@ export async function login(req: Request, res: Response) {
 
   return res.json({
     message: "Login success",
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: result.data.user,
   });
 }
 
-export function logout(req: Request, res: Response) {
+export async function logout(req: Request, res: Response) {
+  const userPayload = (req as unknown as { user?: { id: string } }).user;
+  
+  if (userPayload) {
+    await AuthService.logout(userPayload.id);
+  }
+
   res.clearCookie("access_token");
   return res.json({ message: "Logout success" });
+}
+
+export async function logoutAll(req: Request, res: Response) {
+  const userPayload = (req as unknown as { user?: { id: string } }).user;
+  
+  if (!userPayload) {
+    return res.status(401).json({ message: "Unauthenticated" });
+  }
+
+  const result = await AuthService.logoutAll(userPayload.id);
+  res.clearCookie("access_token");
+  return res.status(result.status).json({ message: result.message });
+}
+
+export async function refresh(req: Request, res: Response) {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
+  const result = await AuthService.refreshToken(refreshToken);
+
+  if (result.status !== 200 || !result.data) {
+    return res.status(result.status).json({ message: result.message });
+  }
+
+  // Set new access token in cookie
+  res.cookie("access_token", result.data.accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    domain: process.env.NODE_ENV === "production" ? ".magentaa.space" : undefined,
+    path: "/",
+  });
+
+  return res.json({ message: "Token refreshed successfully" });
 }
 
 export async function me(req: Request, res: Response) {
@@ -61,6 +79,8 @@ export async function me(req: Request, res: Response) {
     user?: {
       id: string;
       role: string;
+      email: string;
+      tenant_id: string;
     }
   }).user;
 
@@ -68,23 +88,23 @@ export async function me(req: Request, res: Response) {
     return res.status(401).json({ message: "Not authenticated" });
   }
 
-  // Ambil data user lengkap dari database
-  const result = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-    })
-    .from(users)
-    .where(eq(users.id, userPayload.id))
-    .limit(1);
+  // The user data is already attached by auth middleware
+  return res.json({ user: userPayload });
+}
 
-  const user = result[0];
-
-  if (!user) {
-    return res.status(401).json({ message: "User not found" });
+export async function changePassword(req: Request, res: Response) {
+  const userPayload = (req as unknown as { user?: { id: string } }).user;
+  
+  if (!userPayload) {
+    return res.status(401).json({ message: "Unauthenticated" });
   }
 
-  return res.json({ user });
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Current password and new password are required" });
+  }
+
+  const result = await AuthService.changePassword(userPayload.id, currentPassword, newPassword);
+  return res.status(result.status).json({ message: result.message });
 }

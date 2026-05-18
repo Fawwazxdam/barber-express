@@ -1,27 +1,29 @@
 // src/controllers/services.controller.ts
 import { Request, Response } from "express";
-import { ServicesRepository } from "../db/services.repository";
+import { ServicesService } from "../services/services.service";
 import { CreateServiceDto } from "../db/services.repository";
 
 export const ServicesController = {
   async create(req: Request, res: Response) {
     try {
       const dto: CreateServiceDto = req.body;
-      const result = await ServicesRepository.create(dto);
-      return res.status(201).json(result[0]);
-    } catch (error) {
+      const data = await ServicesService.create(dto);
+      return res.status(201).json({ status: 201, message: "Service created successfully", data });
+    } catch (error: any) {
       console.error(error);
-      return res.status(500).json({ message: "Failed to create service" });
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to create service", data: null });
     }
   },
 
   async findAll(req: Request, res: Response) {
     try {
-      const result = await ServicesRepository.findAll();
-      return res.json(result);
-    } catch (error) {
+      const data = await ServicesService.findAll();
+      return res.status(200).json({ status: 200, message: "Success fetch services", data });
+    } catch (error: any) {
       console.error(error);
-      return res.status(500).json({ message: "Failed to fetch services" });
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to fetch services", data: null });
     }
   },
 
@@ -29,54 +31,36 @@ export const ServicesController = {
     try {
       const id = req.params.id as string;
       const dto = req.body;
-
-      const existing = await ServicesRepository.findById(id);
-      if (!existing.length) {
-        return res.status(404).json({ message: "Service tidak ditemukan" });
-      }
-
-      const result = await ServicesRepository.update(id, dto);
-      return res.json(result[0]);
-    } catch (error) {
+      const data = await ServicesService.update(id, dto);
+      return res.status(200).json({ status: 200, message: "Service updated successfully", data });
+    } catch (error: any) {
       console.error(error);
-      return res.status(500).json({ message: "Failed to update service" });
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to update service", data: null });
     }
   },
 
   async toggleActive(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-
-      const existing = await ServicesRepository.findById(id);
-      if (!existing.length) {
-        return res.status(404).json({ message: "Service tidak ditemukan" });
-      }
-
-      const service = existing[0]!;
-      const result = await ServicesRepository.update(id, {
-        isActive: !service.isActive,
-      });
-      return res.json(result[0]);
-    } catch (error) {
+      const data = await ServicesService.toggleActive(id);
+      return res.status(200).json({ status: 200, message: "Service status toggled successfully", data });
+    } catch (error: any) {
       console.error(error);
-      return res.status(500).json({ message: "Failed to toggle active" });
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to toggle active status", data: null });
     }
   },
 
   async remove(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-
-      const existing = await ServicesRepository.findById(id);
-      if (!existing.length) {
-        return res.status(404).json({ message: "Service tidak ditemukan" });
-      }
-
-      await ServicesRepository.delete(id);
-      return res.json({ message: "Service deleted successfully" });
-    } catch (error) {
+      await ServicesService.remove(id);
+      return res.status(200).json({ status: 200, message: "Service deleted successfully", data: null });
+    } catch (error: any) {
       console.error(error);
-      return res.status(500).json({ message: "Failed to delete service" });
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to delete service", data: null });
     }
   },
 };

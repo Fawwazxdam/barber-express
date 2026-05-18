@@ -25,7 +25,26 @@ export const UsersRepository = {
       .then((res) => res[0]);
   },
 
-  findBarbers() {
+  async findBarbers(tenantId?: string) {
+    if (tenantId) {
+      return db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          description: users.description,
+          createdAt: users.createdAt,
+          tenantId: users.tenantId,
+        })
+        .from(users)
+        .where(
+          and(
+            eq(users.role, "BARBER"),
+            eq(users.tenantId, tenantId)
+          )
+        );
+    }
+
     return db
       .select({
         id: users.id,
@@ -33,6 +52,7 @@ export const UsersRepository = {
         email: users.email,
         description: users.description,
         createdAt: users.createdAt,
+        tenantId: users.tenantId,
       })
       .from(users)
       .where(eq(users.role, "BARBER"));

@@ -7,6 +7,9 @@ import { servicesRouter } from "./routes/services.route";
 import { usersRouter } from "./routes/users.route";
 import { bookingsRouter } from "./routes/bookings.route";
 import { mediaRouter } from "./routes/media.route";
+import { tenantsRouter } from "./routes/tenants.route";
+import { plansRouter } from "./routes/plans.route";
+import { subscriptionsRouter } from "./routes/subscriptions.route";
 
 const app = express();
 
@@ -32,5 +35,8 @@ app.use("/services", servicesRouter);
 app.use("/users", usersRouter);
 app.use("/bookings", bookingsRouter);
 app.use("/media", mediaRouter);
+app.use("/tenants", tenantsRouter);
+app.use("/plans", plansRouter);
+app.use("/subscriptions", subscriptionsRouter);
 
 export default app;

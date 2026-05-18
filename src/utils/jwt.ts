@@ -4,6 +4,8 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 export interface TokenPayload extends JwtPayload {
   id: string;
   role: string;
+  tenantId?: string;
+  email?: string;
 }
 
 export function signToken(payload: object): string {
