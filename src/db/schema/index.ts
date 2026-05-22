@@ -6,3 +6,4 @@ export * from "./users";
 export * from "./bookings";
 export * from "./refreshTokens";
 export * from "./media";
+export * from "./barberSchedules";

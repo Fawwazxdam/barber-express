@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import path from "path";
 import { UsersRepository } from "../db/users.repository";
 import { MediaRepository } from "../db/media.repository";
+import { BarberSchedulesService } from "./barberSchedules.service";
 
 export const UsersService = {
   async createBarber(dto: {
@@ -11,6 +12,7 @@ export const UsersService = {
     password: string;
     description?: string;
     image?: Express.Multer.File;
+    schedules?: any[];
   }) {
     const existing = await UsersRepository.findByEmail(dto.email);
     if (existing) {
@@ -42,6 +44,10 @@ export const UsersService = {
         type: "barber",
         referenceId: userResult[0].id,
       });
+    }
+
+    if (dto.schedules && Array.isArray(dto.schedules) && dto.schedules.length > 0) {
+      await BarberSchedulesService.updateBarberSchedule(userResult[0].id, dto.schedules);
     }
 
     return { status: 201, message: "Barber created" };

@@ -17,13 +17,20 @@ export const UsersController = {
         return res.status(403).json({ message: "Forbidden: Admin only" });
       }
 
-      const { email, name, password, description } = req.body;
+      const { email, name, password, description, schedules } = req.body;
       const image = req.file as Express.Multer.File | undefined;
 
-      const createDto: { email: string; name: string; password: string; description?: string; image?: Express.Multer.File } = { email, name, password };
+      const createDto: any = { email, name, password };
       if (description) createDto.description = description;
       if (image) {
         createDto.image = image;
+      }
+      if (schedules) {
+        try {
+          createDto.schedules = typeof schedules === 'string' ? JSON.parse(schedules) : schedules;
+        } catch(e) {
+          return res.status(400).json({ message: "Invalid schedules format" });
+        }
       }
 
       const result = await UsersService.createBarber(createDto);

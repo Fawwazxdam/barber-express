@@ -16,9 +16,6 @@ const handleUpload = (handler: (req: any, res: any) => Promise<any>) => {
         console.error("Multer error:", err.message);
         return res.status(400).json({ message: err.message });
       }
-      console.log("File uploaded:", req.file);
-      console.log("Body:", req.body);
-      console.log("Headers:", req.headers["content-type"]);
       handler(req, res);
     });
   };

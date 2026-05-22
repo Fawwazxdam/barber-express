@@ -10,6 +10,7 @@ import { mediaRouter } from "./routes/media.route";
 import { tenantsRouter } from "./routes/tenants.route";
 import { plansRouter } from "./routes/plans.route";
 import { subscriptionsRouter } from "./routes/subscriptions.route";
+import { barberSchedulesRouter } from "./routes/barberSchedules.route";
 
 const app = express();
 
@@ -38,5 +39,6 @@ app.use("/media", mediaRouter);
 app.use("/tenants", tenantsRouter);
 app.use("/plans", plansRouter);
 app.use("/subscriptions", subscriptionsRouter);
+app.use("/", barberSchedulesRouter);
 
 export default app;

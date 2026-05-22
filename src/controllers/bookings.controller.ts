@@ -145,4 +145,25 @@ export const BookingsController = {
       return res.status(500).json({ message: "Failed to fetch barber dashboard stats" });
     }
   },
+
+  async getBarberBookingsByRange(req: Request, res: Response) {
+    try {
+      const { barberId, startDate, endDate } = req.query;
+
+      if (!barberId || typeof barberId !== "string") {
+        return res.status(400).json({ message: "barberId is required" });
+      }
+
+      const result = await BookingsService.getBarberBookingsByRange(
+        barberId,
+        startDate as string | undefined,
+        endDate as string | undefined
+      );
+
+      return res.status(result.status).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch barber bookings by range" });
+    }
+  },
 };

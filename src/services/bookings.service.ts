@@ -1,6 +1,7 @@
 // src/services/bookings.service.ts
 import { BookingsRepository } from "../db/bookings.repository";
-import { calculateEndTime, isWithinOperatingHours, generateTimeSlots } from "../utils/bookings.utils";
+import { BarberSchedulesRepository } from "../db/barberSchedules.repository";
+import { calculateEndTime, isBookingWithinSchedule, generateTimeSlots } from "../utils/bookings.utils";
 
 export const BookingsService = {
   async createBooking(dto: {
@@ -16,8 +17,22 @@ export const BookingsService = {
     const start = new Date(dto.bookingTime);
     const end = calculateEndTime(start, dto.duration);
 
-    if (!isWithinOperatingHours(start) || !isWithinOperatingHours(end)) {
-      return { status: 400, message: "Di luar jam operasional" };
+    // Validasi jam operasional barber
+    const dayOfWeek = start.getDay();
+    const schedule = await BarberSchedulesRepository.findByBarberIdAndDay(dto.barberId, dayOfWeek);
+
+    if (schedule) {
+      if (!schedule.isActive) {
+        return { status: 400, message: "Barber tidak bertugas pada hari tersebut" };
+      }
+      if (!isBookingWithinSchedule(start, end, schedule.startTime, schedule.endTime)) {
+        return { status: 400, message: "Di luar jam operasional barber" };
+      }
+    } else {
+      // Fallback ke jam operasional global (09:00 - 21:00) jika belum diset
+      if (!isBookingWithinSchedule(start, end, "09:00", "21:00")) {
+        return { status: 400, message: "Di luar jam operasional" };
+      }
     }
 
     const available = await BookingsRepository.isTimeSlotAvailable(dto.barberId, start, end);
@@ -85,13 +100,35 @@ export const BookingsService = {
       return { status: 400, message: "Parameter 'date' is required and must be a valid date string" };
     }
 
+    if (!barberId) {
+      return { status: 400, message: "barberId is required" };
+    }
+
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) {
       return { status: 400, message: "Parameter 'date' must be a valid date in YYYY-MM-DD format" };
     }
 
-    const allSlots = generateTimeSlots(date);
-    const bookings = await BookingsRepository.findBookingsByDate(date);
+    const dayOfWeek = date.getDay();
+    const schedule = await BarberSchedulesRepository.findByBarberIdAndDay(barberId, dayOfWeek);
+
+    let allSlots = [];
+    if (schedule) {
+      if (!schedule.isActive) {
+        return {
+          status: 200,
+          data: [],
+          message: "Barber sedang libur pada hari ini",
+        };
+      }
+      allSlots = generateTimeSlots(date, schedule.startTime, schedule.endTime);
+    } else {
+      // Fallback ke jam operasional default jika jadwal belum terisi
+      allSlots = generateTimeSlots(date, "09:00", "21:00");
+    }
+
+    // Filter booking khusus barber ini saja pada tanggal tersebut
+    const bookings = await BookingsRepository.findBookingsByBarberAndDate(barberId, date);
 
     const available = allSlots.filter((slot) => {
       return !bookings.some((booking) => {
@@ -149,5 +186,40 @@ export const BookingsService = {
         pendingConfirmations,
       },
     };
+  },
+
+  async getBarberBookingsByRange(
+    barberId: string,
+    startDateStr?: string,
+    endDateStr?: string
+  ) {
+    if (!barberId) {
+      return { status: 400, message: "barberId is required" };
+    }
+
+    // Default: 7 days back
+    const startDate = startDateStr
+      ? new Date(startDateStr)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Default: 7 days forward
+    const endDate = endDateStr
+      ? new Date(endDateStr)
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    endDate.setHours(23, 59, 59, 999);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return { status: 400, message: "Invalid date format" };
+    }
+
+    const result = await BookingsRepository.findBookingsByBarberAndDateRange(
+      barberId,
+      startDate,
+      endDate,
+      ["pending", "confirmed"]
+    );
+
+    return { status: 200, data: result };
   },
 };

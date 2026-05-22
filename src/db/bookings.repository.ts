@@ -390,4 +390,43 @@ export const BookingsRepository = {
 
     return Number(result[0]?.count || 0);
   },
+
+  async findBookingsByBarberAndDateRange(
+    barberId: string,
+    startDate: Date,
+    endDate: Date,
+    statuses?: ("pending" | "confirmed" | "completed" | "cancelled")[]
+  ) {
+    const conditions = [
+      eq(bookings.barberId, barberId),
+      gte(bookings.bookingDate, startDate),
+      lt(bookings.bookingDate, endDate),
+    ];
+
+    if (statuses && statuses.length > 0) {
+      conditions.push(inArray(bookings.status, statuses));
+    }
+
+    return db
+      .select({
+        id: bookings.id,
+        barberId: bookings.barberId,
+        serviceId: bookings.serviceId,
+        serviceName: services.name,
+        servicePrice: services.price,
+        customerUserId: bookings.customerUserId,
+        customerName: bookings.customerName,
+        customerPhone: bookings.customerPhone,
+        customerNote: bookings.customerNote,
+        bookingDate: bookings.bookingDate,
+        status: bookings.status,
+        duration: services.duration,
+        createdAt: bookings.createdAt,
+        updatedAt: bookings.updatedAt,
+      })
+      .from(bookings)
+      .innerJoin(services, eq(bookings.serviceId, services.id))
+      .where(and(...conditions))
+      .orderBy(bookings.bookingDate);
+  },
 };
