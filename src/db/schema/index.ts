@@ -1,6 +1,7 @@
 export * from "./tenants";
 export * from "./plans";
 export * from "./subscriptions";
+export * from "./subscriptionTransactions";
 export * from "./services";
 export * from "./users";
 export * from "./bookings";
