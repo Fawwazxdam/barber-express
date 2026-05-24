@@ -79,6 +79,10 @@ export class SuperadminService {
       closeTime: "21:00"
     });
 
+    if (!tenant) {
+      throw new Error("Failed to create tenant");
+    }
+
     // 2. Create Owner User
     const hashedPassword = await bcrypt.hash(ownerPassword, 10);
     const [user] = await UsersRepository.create({

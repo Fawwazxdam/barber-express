@@ -71,7 +71,7 @@ export class SuperadminController {
 
   static async updateTenant(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const updated = await SuperadminService.updateTenant(id, req.body);
       return res.status(200).json({ message: "Tenant updated successfully", tenant: updated });
     } catch (error: any) {
@@ -82,7 +82,7 @@ export class SuperadminController {
 
   static async deleteTenant(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await SuperadminService.deleteTenant(id);
       return res.status(200).json({ message: "Tenant deleted successfully" });
     } catch (error: any) {
