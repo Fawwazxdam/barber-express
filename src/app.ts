@@ -13,6 +13,7 @@ import { subscriptionsRouter } from "./routes/subscriptions.route";
 import subscriptionTransactionsRouter from "./routes/subscriptionTransactions.route";
 import superadminRouter from "./routes/superadmin.route";
 import { barberSchedulesRouter } from "./routes/barberSchedules.route";
+import onboardingRoutes from "./routes/onboarding.route";
 
 const app = express();
 
@@ -44,5 +45,6 @@ app.use("/subscriptions", subscriptionsRouter);
 app.use("/subscription-transactions", subscriptionTransactionsRouter);
 app.use("/superadmin", superadminRouter);
 app.use("/", barberSchedulesRouter);
+app.use("/onboarding", onboardingRoutes);
 
 export default app;

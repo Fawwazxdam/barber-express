@@ -1,6 +1,7 @@
 // src/controllers/bookings.controller.ts
 import { Request, Response } from "express";
 import { BookingsService } from "../services/bookings.service";
+import { verifyToken } from "../utils/jwt";
 
 export const BookingsController = {
   async create(req: Request, res: Response) {
@@ -122,7 +123,20 @@ export const BookingsController = {
 
   async getDashboardStats(req: Request, res: Response) {
     try {
-      const result = await BookingsService.getDashboardStats();
+      let tenantId: string | undefined;
+      const token = req.cookies?.access_token;
+      if (token) {
+        try {
+          const payload = verifyToken(token);
+          if (payload.tenantId) {
+            tenantId = payload.tenantId;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      const result = await BookingsService.getDashboardStats(tenantId);
       return res.status(result.status).json(result);
     } catch (error) {
       console.error(error);

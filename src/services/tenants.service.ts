@@ -4,6 +4,7 @@ import { PlansRepository } from "../db/plans.repository";
 import { SubscriptionsRepository } from "../db/subscriptions.repository";
 import { UsersRepository } from "../db/users.repository";
 import { BookingsRepository } from "../db/bookings.repository";
+import { TransactionsRepository } from "../db/transactions.repository";
 import { tenants } from "../db/schema";
 import { InferSelectModel } from "drizzle-orm";
 
@@ -125,10 +126,11 @@ export const TenantsService = {
     const tenant = await TenantsRepository.findById(tenantId);
     if (!tenant) throw new AppError("Tenant not found", 404);
 
-    const [activeBarbers, todayBookings, pendingBookings] = await Promise.all([
+    const [activeBarbers, todayBookings, pendingBookings, todayRevenue] = await Promise.all([
       UsersRepository.findBarbers(tenantId).then((barbers) => barbers.length),
       BookingsRepository.countBookingsByTenantToday(tenantId),
       BookingsRepository.countPendingBookingsByTenant(tenantId),
+      TransactionsRepository.getRevenueByTenantToday(tenantId),
     ]);
 
     return {
@@ -136,6 +138,7 @@ export const TenantsService = {
       activeBarbers,
       todayBookings,
       pendingBookings,
+      todayRevenue,
       openTime: tenant.openTime,
       closeTime: tenant.closeTime,
     };

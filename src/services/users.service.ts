@@ -13,6 +13,7 @@ export const UsersService = {
     description?: string;
     image?: Express.Multer.File;
     schedules?: any[];
+    tenantId?: string;
   }) {
     const existing = await UsersRepository.findByEmail(dto.email);
     if (existing) {
@@ -27,6 +28,7 @@ export const UsersService = {
       password: hashed,
       role: "BARBER",
       description: dto.description,
+      tenantId: dto.tenantId,
     });
 
     if (!userResult[0]) {
@@ -53,8 +55,8 @@ export const UsersService = {
     return { status: 201, message: "Barber created" };
   },
 
-  async getBarbers() {
-    const barbers = await UsersRepository.findBarbers();
+  async getBarbers(tenantId?: string) {
+    const barbers = await UsersRepository.findBarbers(tenantId);
     
     // Fetch media for each barber
     const barbersWithMedia = await Promise.all(

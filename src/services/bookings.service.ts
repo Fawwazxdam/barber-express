@@ -2,6 +2,8 @@
 import { BookingsRepository } from "../db/bookings.repository";
 import { BarberSchedulesRepository } from "../db/barberSchedules.repository";
 import { calculateEndTime, isBookingWithinSchedule, generateTimeSlots } from "../utils/bookings.utils";
+import { ServicesRepository } from "../db/services.repository";
+import { TransactionsRepository } from "../db/transactions.repository";
 
 export const BookingsService = {
   async createBooking(dto: {
@@ -40,8 +42,15 @@ export const BookingsService = {
       return { status: 400, message: "Jadwal sudah dibooking" };
     }
 
+    const serviceResult = await ServicesRepository.findById(dto.serviceId);
+    const service = serviceResult?.[0];
+    if (!service) {
+      return { status: 404, message: "Service not found" };
+    }
+
     const result = await BookingsRepository.create({
       barberId: dto.barberId,
+      tenantId: service.tenantId, // Ensure tenantId is set if not already handled
       serviceId: dto.serviceId,
       customerUserId: dto.customerUserId,
       customerName: dto.customerName,
@@ -50,7 +59,22 @@ export const BookingsService = {
       bookingDate: start,
     });
 
-    return { status: 201, data: result[0] };
+    const booking = result?.[0];
+    if (!booking) {
+      return { status: 500, message: "Failed to create booking" };
+    }
+
+    // Create an unpaid transaction
+    if (service.tenantId) {
+      await TransactionsRepository.create({
+        tenantId: service.tenantId,
+        bookingId: booking.id,
+        amount: service.price,
+        status: "unpaid",
+      });
+    }
+
+    return { status: 201, data: booking };
   },
 
   getBookings() {
@@ -92,7 +116,20 @@ export const BookingsService = {
     }
 
     const result = await BookingsRepository.updateStatus(bookingId, status);
-    return { status: 200, data: result[0] };
+    const updatedBooking = result[0];
+
+    if (updatedBooking) {
+      const transaction = await TransactionsRepository.findByBookingId(bookingId);
+      if (transaction) {
+        if (status === "completed") {
+          await TransactionsRepository.updateStatus(transaction.id, "paid");
+        } else if (status === "cancelled") {
+          await TransactionsRepository.updateStatus(transaction.id, "cancelled");
+        }
+      }
+    }
+
+    return { status: 200, data: updatedBooking };
   },
 
   async getAvailableSlots(dateStr: string, barberId: string) {
@@ -150,11 +187,12 @@ export const BookingsService = {
     };
   },
 
-  async getDashboardStats() {
-    const [todayBookings, completedBookingsToday, topHaircuts] = await Promise.all([
-      BookingsRepository.countBookingsToday(),
-      BookingsRepository.countCompletedBookingsToday(),
-      BookingsRepository.getTopHaircutsThisWeek(5),
+  async getDashboardStats(tenantId?: string) {
+    const [todayBookings, completedBookingsToday, topHaircuts, todayRevenue] = await Promise.all([
+      BookingsRepository.countBookingsToday(tenantId),
+      BookingsRepository.countCompletedBookingsToday(tenantId),
+      BookingsRepository.getTopHaircutsThisWeek(5, tenantId),
+      tenantId ? TransactionsRepository.getRevenueByTenantToday(tenantId) : Promise.resolve(0),
     ]);
 
     return {
@@ -163,6 +201,7 @@ export const BookingsService = {
         todayBookings,
         completedBookingsToday,
         topHaircuts,
+        todayRevenue,
       },
     };
   },
@@ -172,10 +211,11 @@ export const BookingsService = {
       return { status: 400, message: "barberId is required" };
     }
 
-    const [todayBookings, completedBookingsToday, pendingConfirmations] = await Promise.all([
+    const [todayBookings, completedBookingsToday, pendingConfirmations, todayRevenue] = await Promise.all([
       BookingsRepository.countBookingsByBarberToday(barberId),
       BookingsRepository.countCompletedBookingsByBarberToday(barberId),
       BookingsRepository.getPendingConfirmationsByBarberToday(barberId),
+      TransactionsRepository.getRevenueByBarberToday(barberId),
     ]);
 
     return {
@@ -184,6 +224,7 @@ export const BookingsService = {
         todayBookings,
         completedBookingsToday,
         pendingConfirmations,
+        todayRevenue,
       },
     };
   },

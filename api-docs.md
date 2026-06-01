@@ -46,6 +46,64 @@ Content-Type: application/json
 
 ---
 
+## 🚀 Onboarding
+
+### POST `/onboarding/tenant/register`
+Register a new tenant (barbershop) and admin user. Public endpoint - no authentication required.
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "tenant": {
+    "name": "Barbershop Name",
+    "slug": "barbershop-name",
+    "phone": "+628123456789",
+    "address": "Jl. Contoh No. 123",
+    "openTime": "09:00",
+    "closeTime": "21:00"
+  },
+  "admin": {
+    "name": "Admin Name",
+    "email": "admin@example.com",
+    "password": "securepassword123"
+  },
+  "planId": "optional-plan-uuid-here"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "status": 201,
+  "message": "Tenant and admin user created successfully",
+  "data": {
+    "tenant": {
+      "id": "tenant-uuid",
+      "name": "Barbershop Name",
+      "slug": "barbershop-name"
+    },
+    "admin": {
+      "id": "user-uuid",
+      "name": "Admin Name",
+      "email": "admin@example.com",
+      "role": "ADMIN"
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `400` — Missing required fields or invalid data
+- `409` — Slug or email already exists
+- `500` — Internal server error
+
+---
+
 ### POST `/auth/logout`
 Logout current user (clears cookie).
 

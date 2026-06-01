@@ -63,14 +63,16 @@ async function seed() {
 
   // Insert plans
   const plansResult = await db.insert(schema.plans).values([
-    { name: "Basic", price: 0, maxBarbers: 1, isActive: true },
-    { name: "Premium", price: 50000, maxBarbers: 5, isActive: true },
+    { name: "STARTER", price: 99000, maxBarbers: 2, isActive: true },
+    { name: "PROFESSIONAL", price: 199000, maxBarbers: 5, isActive: true },
+    { name: "ENTERPRISE", price: 399000, maxBarbers: 999, isActive: true },
   ]).returning();
 
-  const basicPlan = plansResult[0];
-  const premiumPlan = plansResult[1];
+  const starterPlan = plansResult[0];
+  const professionalPlan = plansResult[1];
+  const enterprisePlan = plansResult[2];
 
-  if (!basicPlan || !premiumPlan) {
+  if (!starterPlan || !professionalPlan || !enterprisePlan) {
     throw new Error("Failed to create plans");
   }
 
@@ -79,7 +81,7 @@ async function seed() {
   const nextMonth = new Date(now.setMonth(now.getMonth() + 1));
   await db.insert(schema.subscriptions).values({
     tenantId: tenant.id,
-    planId: premiumPlan.id,
+    planId: professionalPlan.id,
     status: "active" as const,
     startsAt: new Date(),
     endsAt: nextMonth,
@@ -150,7 +152,7 @@ async function seed() {
   console.log("- Barber: barber@barber.com (password: password)");
   console.log("- Customer: customer1@barber.com (password: password)");
   console.log("- Services: Hair Cut, Beard Shave, Hair Styling");
-  console.log("- Plans: Basic, Premium");
+  console.log("- Plans: STARTER, PROFESSIONAL, ENTERPRISE");
   console.log("- Bookings: 2 created");
 }
 

@@ -8,3 +8,4 @@ export * from "./bookings";
 export * from "./refreshTokens";
 export * from "./media";
 export * from "./barberSchedules";
+export * from "./transactions";

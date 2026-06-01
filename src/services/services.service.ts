@@ -14,8 +14,8 @@ export const ServicesService = {
         return result[0];
     },
 
-    async findAll() {
-        return await ServicesRepository.findAll();
+    async findAll(tenantId?: string) {
+        return await ServicesRepository.findAll(tenantId);
     },
 
     async findById(id: string) {

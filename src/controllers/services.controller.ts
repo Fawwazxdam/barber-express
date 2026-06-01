@@ -2,11 +2,23 @@
 import { Request, Response } from "express";
 import { ServicesService } from "../services/services.service";
 import { CreateServiceDto } from "../db/services.repository";
+import { verifyToken } from "../utils/jwt";
 
 export const ServicesController = {
   async create(req: Request, res: Response) {
     try {
       const dto: CreateServiceDto = req.body;
+      
+      const token = req.cookies?.access_token;
+      if (token) {
+        try {
+          const payload = verifyToken(token);
+          if (payload.role !== "SUPERADMIN" && payload.tenantId) {
+            dto.tenantId = payload.tenantId;
+          }
+        } catch (err) {}
+      }
+      
       const data = await ServicesService.create(dto);
       return res.status(201).json({ status: 201, message: "Service created successfully", data });
     } catch (error: any) {
@@ -18,7 +30,21 @@ export const ServicesController = {
 
   async findAll(req: Request, res: Response) {
     try {
-      const data = await ServicesService.findAll();
+      let tenantId = req.query.tenantId as string;
+      
+      if (!tenantId) {
+        const token = req.cookies?.access_token;
+        if (token) {
+          try {
+            const payload = verifyToken(token);
+            if (payload.role !== "SUPERADMIN" && payload.tenantId) {
+              tenantId = payload.tenantId;
+            }
+          } catch (err) {}
+        }
+      }
+
+      const data = await ServicesService.findAll(tenantId);
       return res.status(200).json({ status: 200, message: "Success fetch services", data });
     } catch (error: any) {
       console.error(error);

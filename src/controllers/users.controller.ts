@@ -20,7 +20,7 @@ export const UsersController = {
       const { email, name, password, description, schedules } = req.body;
       const image = req.file as Express.Multer.File | undefined;
 
-      const createDto: any = { email, name, password };
+      const createDto: any = { email, name, password, tenantId: payload.tenantId };
       if (description) createDto.description = description;
       if (image) {
         createDto.image = image;
@@ -44,7 +44,23 @@ export const UsersController = {
 
   async getBarbers(req: Request, res: Response) {
     try {
-      const result = await UsersService.getBarbers();
+      let tenantId = req.query.tenantId as string;
+      
+      if (!tenantId) {
+        const token = req.cookies?.access_token;
+        if (token) {
+          try {
+            const payload = verifyToken(token);
+            if (payload.role !== "SUPERADMIN" && payload.tenantId) {
+              tenantId = payload.tenantId;
+            }
+          } catch (err) {
+            // ignore
+          }
+        }
+      }
+
+      const result = await UsersService.getBarbers(tenantId);
       return res.json(result);
     } catch (error) {
       console.error(error);

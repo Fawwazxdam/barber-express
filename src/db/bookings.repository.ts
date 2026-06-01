@@ -184,52 +184,69 @@ export const BookingsRepository = {
       .returning();
   },
 
-  async countBookingsToday() {
+  async countBookingsToday(tenantId?: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const conditions = [
+      gte(bookings.bookingDate, today),
+      lt(bookings.bookingDate, tomorrow)
+    ];
+
+    if (tenantId) {
+      conditions.push(eq(bookings.tenantId, tenantId));
+    }
+
     const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(bookings)
-      .where(
-        and(
-          gte(bookings.bookingDate, today),
-          lt(bookings.bookingDate, tomorrow)
-        )
-      );
+      .where(and(...conditions));
 
     return Number(result[0]?.count || 0);
   },
 
-  async countCompletedBookingsToday() {
+  async countCompletedBookingsToday(tenantId?: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const conditions = [
+      gte(bookings.bookingDate, today),
+      lt(bookings.bookingDate, tomorrow),
+      eq(bookings.status, "completed")
+    ];
+
+    if (tenantId) {
+      conditions.push(eq(bookings.tenantId, tenantId));
+    }
+
     const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(bookings)
-      .where(
-        and(
-          gte(bookings.bookingDate, today),
-          lt(bookings.bookingDate, tomorrow),
-          eq(bookings.status, "completed")
-        )
-      );
+      .where(and(...conditions));
 
     return Number(result[0]?.count || 0);
   },
 
-  async getTopHaircutsThisWeek(limit: number = 5) {
+  async getTopHaircutsThisWeek(limit: number = 5, tenantId?: string) {
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
     startOfWeek.setHours(0, 0, 0, 0);
+
+    const conditions = [
+      gte(bookings.bookingDate, startOfWeek),
+      eq(bookings.status, "completed")
+    ];
+
+    if (tenantId) {
+      conditions.push(eq(bookings.tenantId, tenantId));
+    }
 
     const result = await db
       .select({
@@ -239,12 +256,7 @@ export const BookingsRepository = {
       })
       .from(bookings)
       .innerJoin(services, eq(bookings.serviceId, services.id))
-      .where(
-        and(
-          gte(bookings.bookingDate, startOfWeek),
-          eq(bookings.status, "completed")
-        )
-      )
+      .where(and(...conditions))
       .groupBy(services.id, services.name)
       .orderBy(sql`count(*) DESC`)
       .limit(limit);

@@ -1,7 +1,7 @@
 // src/db/services.repository.ts
 import { db } from "../db";
 import { services } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { InferInsertModel } from "drizzle-orm";
 
 export type Service = typeof services.$inferSelect;
@@ -12,7 +12,10 @@ export const ServicesRepository = {
     return db.insert(services).values(data).returning();
   },
 
-  findAll() {
+  findAll(tenantId?: string) {
+    if (tenantId) {
+      return db.select().from(services).where(eq(services.tenantId, tenantId));
+    }
     return db.select().from(services);
   },
 
