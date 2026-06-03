@@ -85,39 +85,8 @@ export const OnboardingService = {
         throw new AppError("Failed to create admin user", 500);
       }
 
-      // 5. Create subscription (use provided plan or default STARTER plan)
-      let planId = dto.planId;
-      if (!planId) {
-        const [starterPlan] = await tx
-          .select()
-          .from(plans)
-          .where(eq(plans.name, "STARTER"))
-          .limit(1);
-        if (!starterPlan) {
-          throw new AppError("STARTER plan not found in database", 500);
-        }
-        planId = starterPlan.id;
-      }
-
-      // Verify plan exists
-      const plan = await tx.query.plans.findFirst({
-        where: eq(plans.id, planId),
-      });
-      if (!plan) {
-        throw new AppError("Invalid plan ID", 400);
-      }
-
-      const now = new Date();
-      const nextMonth = new Date(now);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      await tx.insert(subscriptions).values({
-        tenantId: tenant.id,
-        planId,
-        status: "active" as const,
-        startsAt: now,
-        endsAt: nextMonth,
-      });
+      // 5. Subscription is no longer created automatically.
+      // Tenants must choose a plan and submit payment proof via the Billing dashboard.
 
       return {
         tenant: {

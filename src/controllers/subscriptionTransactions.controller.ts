@@ -4,9 +4,15 @@ import { SubscriptionTransactionsService } from "../services/subscriptionTransac
 export class SubscriptionTransactionsController {
   static async createTransaction(req: Request, res: Response) {
     try {
-      const { planId, amount, paymentProofUrl, notes } = req.body;
+      const { planId, amount, notes } = req.body;
       const user = (req as any).user;
       const tenantId = user?.tenantId;
+      const file = req.file as Express.Multer.File | undefined;
+      
+      let paymentProofUrl = req.body.paymentProofUrl;
+      if (file) {
+        paymentProofUrl = `/uploads/${file.filename}`;
+      }
 
       if (!tenantId) {
         return res.status(401).json({ message: "Unauthorized. Tenant ID is missing." });

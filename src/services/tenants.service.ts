@@ -32,13 +32,15 @@ export const TenantsService = {
   async getTenantBySlug(slug: string) {
     const tenant = await TenantsRepository.findBySlug(slug);
     if (!tenant) throw new AppError("Tenant not found", 404);
-    return tenant;
+    const activeSubscription = await SubscriptionsRepository.findActiveByTenantId(tenant.id);
+    return { ...tenant, hasActiveSubscription: !!activeSubscription };
   },
 
   async getTenantByToken(tenantId: string) {
     const tenant = await TenantsRepository.findById(tenantId);
     if (!tenant) throw new AppError("Tenant not found", 404);
-    return tenant;
+    const activeSubscription = await SubscriptionsRepository.findActiveByTenantId(tenant.id);
+    return { ...tenant, hasActiveSubscription: !!activeSubscription };
   },
 
   async createTenant(dto: {
