@@ -148,6 +148,7 @@ export const BookingsRepository = {
         barberId: bookings.barberId,
         serviceId: bookings.serviceId,
         serviceName: services.name,
+        servicePrice: services.price,
         customerUserId: bookings.customerUserId,
         customerName: bookings.customerName,
         customerPhone: bookings.customerPhone,
@@ -163,6 +164,44 @@ export const BookingsRepository = {
       .where(
         and(
           eq(bookings.barberId, barberId),
+          gte(bookings.bookingDate, startOfDay),
+          lt(bookings.bookingDate, endOfDay)
+        )
+      )
+      .orderBy(bookings.bookingDate);
+  },
+
+  async findBookingsByTenantAndDate(tenantId: string, date: Date) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return db
+      .select({
+        id: bookings.id,
+        barberId: bookings.barberId,
+        barberName: users.name,
+        serviceId: bookings.serviceId,
+        serviceName: services.name,
+        servicePrice: services.price,
+        customerUserId: bookings.customerUserId,
+        customerName: bookings.customerName,
+        customerPhone: bookings.customerPhone,
+        customerNote: bookings.customerNote,
+        bookingDate: bookings.bookingDate,
+        status: bookings.status,
+        duration: services.duration,
+        createdAt: bookings.createdAt,
+        updatedAt: bookings.updatedAt,
+      })
+      .from(bookings)
+      .innerJoin(services, eq(bookings.serviceId, services.id))
+      .innerJoin(users, eq(bookings.barberId, users.id))
+      .where(
+        and(
+          eq(bookings.tenantId, tenantId),
           gte(bookings.bookingDate, startOfDay),
           lt(bookings.bookingDate, endOfDay)
         )

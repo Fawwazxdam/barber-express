@@ -88,16 +88,49 @@ export const BookingsController = {
     }
   },
 
+  async getTenantBookingsByDate(req: Request, res: Response) {
+    try {
+      const { date } = req.query;
+      let tenantId: string | undefined;
+      
+      const token = req.cookies?.access_token;
+      if (token) {
+        try {
+          const payload = verifyToken(token);
+          if (payload.tenantId) {
+            tenantId = payload.tenantId;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      if (!tenantId) {
+        return res.status(401).json({ message: "Unauthorized: tenantId missing" });
+      }
+
+      const result = await BookingsService.getTenantBookingsByDate(
+        date as string,
+        tenantId
+      );
+
+      return res.status(result.status).json(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Failed to fetch tenant bookings by date" });
+    }
+  },
+
   async updateStatus(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const { status } = req.body;
+      const { status, paymentMethod } = req.body;
 
       if (!["pending", "confirmed", "completed", "cancelled"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
-      const result = await BookingsService.updateBookingStatus(id, status);
+      const result = await BookingsService.updateBookingStatus(id, status, paymentMethod);
       return res.status(result.status).json(result);
     } catch (error) {
       console.error(error);

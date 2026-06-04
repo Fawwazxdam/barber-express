@@ -107,9 +107,24 @@ export const BookingsService = {
     return { status: 200, data: result };
   },
 
+  async getTenantBookingsByDate(dateStr: string, tenantId: string) {
+    if (!tenantId) {
+      return { status: 400, message: "tenantId is required" };
+    }
+
+    const date = dateStr ? new Date(dateStr) : new Date();
+    if (isNaN(date.getTime())) {
+      return { status: 400, message: "Invalid date format" };
+    }
+
+    const result = await BookingsRepository.findBookingsByTenantAndDate(tenantId, date);
+    return { status: 200, data: result };
+  },
+
   async updateBookingStatus(
     bookingId: string,
-    status: "pending" | "confirmed" | "completed" | "cancelled"
+    status: "pending" | "confirmed" | "completed" | "cancelled",
+    paymentMethod?: "cash" | "qris" | "transfer" | "other"
   ) {
     if (!["pending", "confirmed", "completed", "cancelled"].includes(status)) {
       return { status: 400, message: "Invalid status" };
@@ -122,7 +137,7 @@ export const BookingsService = {
       const transaction = await TransactionsRepository.findByBookingId(bookingId);
       if (transaction) {
         if (status === "completed") {
-          await TransactionsRepository.updateStatus(transaction.id, "paid");
+          await TransactionsRepository.updateStatus(transaction.id, "paid", paymentMethod);
         } else if (status === "cancelled") {
           await TransactionsRepository.updateStatus(transaction.id, "cancelled");
         }
