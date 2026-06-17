@@ -11,7 +11,9 @@ export const users = pgTable("users", {
   password: varchar("password", { length: 255 }).notNull(),
   role: roleEnum("role").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+  verificationToken: varchar("verification_token", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export type User = typeof users.$inferSelect;

@@ -1,0 +1,34 @@
+name: Deploy Backend to VPS
+
+on:
+  push:
+    branches:
+      - main # Jalankan deploy otomatis setiap ada push/merge ke branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets::VPS_HOST }}
+          username: ${{ secrets::VPS_USER }}
+          key: ${{ secrets::VPS_SSH_KEY }}
+          port: 22
+          script: |
+            # 1. Masuk ke folder workspace induk di VPS
+            cd /home/magentaadam/projects/memangkas-barber/barber-express
+            
+            # 2. Tarik kode terbaru dari GitHub ke VPS
+            git pull origin main
+            
+            # 3. Kembali ke folder root workspace yang berisi docker-compose.yml
+            cd ..
+            
+            # 4. Rebuild dan restart HANYA service backend saja
+            docker compose up -d --build backend

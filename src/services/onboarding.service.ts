@@ -68,8 +68,10 @@ export const OnboardingService = {
         throw new AppError("Failed to create tenant", 500);
       }
 
-      // 4. Create admin user
+      // 4. Create admin user with OTP
       const hashedPassword = await bcrypt.hash(dto.admin.password, 10);
+      const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+      
       const [adminUser] = await tx
         .insert(users)
         .values({
@@ -78,6 +80,7 @@ export const OnboardingService = {
           email: dto.admin.email,
           password: hashedPassword,
           role: "ADMIN",
+          verificationToken: otp,
         })
         .returning();
 
@@ -85,8 +88,37 @@ export const OnboardingService = {
         throw new AppError("Failed to create admin user", 500);
       }
 
-      // 5. Subscription is no longer created automatically.
-      // Tenants must choose a plan and submit payment proof via the Billing dashboard.
+      // 4.5. Send OTP Email via Resend
+      // We can do this outside the transaction or just fire & forget here
+      try {
+        const { EmailService } = require("./email.service");
+        await EmailService.sendOTP(dto.admin.email, otp);
+      } catch (err) {
+        console.error("Failed to send OTP email during onboarding", err);
+        // We don't fail the registration if email fails, they can request a new one later
+      }
+
+      // 5. Handle Starter 14-day trial or skip for other plans
+      const targetPlanName = dto.planId ? dto.planId.toUpperCase() : "STARTER";
+      if (targetPlanName === "STARTER") {
+        const planRecord = await tx.query.plans.findFirst({
+          where: eq(plans.name, "STARTER"),
+        });
+
+        if (planRecord) {
+          const now = new Date();
+          const endsAt = new Date(now);
+          endsAt.setDate(endsAt.getDate() + 14);
+
+          await tx.insert(subscriptions).values({
+            tenantId: tenant.id,
+            planId: planRecord.id,
+            status: "active",
+            startsAt: now,
+            endsAt: endsAt,
+          });
+        }
+      }
 
       return {
         tenant: {
@@ -102,5 +134,23 @@ export const OnboardingService = {
         },
       };
     });
+  },
+
+  async verifyEmail(email: string, token: string) {
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    if (!userRecord) {
+      throw new AppError("User not found", 404);
+    }
+    if (userRecord.verificationToken !== token) {
+      throw new AppError("Invalid verification code", 400);
+    }
+
+    await db.update(users)
+      .set({ emailVerifiedAt: new Date(), verificationToken: null })
+      .where(eq(users.id, userRecord.id));
+
+    return true;
   }
 };

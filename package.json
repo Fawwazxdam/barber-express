@@ -9,6 +9,7 @@
     "db:push": "npx drizzle-kit push",
     "db:seed": "ts-node src/db/seed.ts",
     "db:migrate": "npx drizzle-kit migrate",
+    "db:fresh": "ts-node src/db/reset.ts && npx drizzle-kit push --force && npm run db:seed",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -28,6 +29,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "pg": "^8.18.0",
+    "resend": "^6.12.4",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
