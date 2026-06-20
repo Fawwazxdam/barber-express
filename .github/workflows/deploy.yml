@@ -1,34 +1,48 @@
-name: Deploy Backend to VPS
+name: Deploy Backend
 
 on:
   push:
     branches:
-      - main # Jalankan deploy otomatis setiap ada push/merge ke branch main
+      - main
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Executing remote ssh commands to deploy
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Mengarah ke repo barber-be
+          tags: ${{ secrets.DOCKER_USERNAME }}/barber-be:latest
+
+  deploy-to-vps:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute SSH commands to deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets::VPS_HOST }}
-          username: ${{ secrets::VPS_USER }}
-          key: ${{ secrets::VPS_SSH_KEY }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
-            # 1. Masuk ke folder workspace induk di VPS
-            cd /home/magentaadam/projects/memangkas-barber/barber-express
+            # Masuk ke folder root project di VPS
+            cd /projects/memangkas-barber
             
-            # 2. Tarik kode terbaru dari GitHub ke VPS
-            git pull origin main
+            # Tarik image backend terbaru
+            docker compose pull backend
             
-            # 3. Kembali ke folder root workspace yang berisi docker-compose.yml
-            cd ..
-            
-            # 4. Rebuild dan restart HANYA service backend saja
-            docker compose up -d --build backend
+            # Restart service backend dengan image baru
+            docker compose up -d backend
