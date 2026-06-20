@@ -70,6 +70,15 @@ export const TenantsService = {
     openTime?: string;
     closeTime?: string;
     isActive?: boolean;
+    heroImage?: string | null;
+    heroTitle?: string | null;
+    heroDescription?: string | null;
+    tagline?: string | null;
+    aboutText?: string | null;
+    galleryImages?: string[] | null;
+    ctaTitle?: string | null;
+    ctaDescription?: string | null;
+    ctaButtonText?: string | null;
   }) {
     const existing = await TenantsRepository.findById(id);
     if (!existing) throw new AppError("Tenant not found", 404);

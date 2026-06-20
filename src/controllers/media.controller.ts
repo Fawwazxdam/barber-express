@@ -1,8 +1,30 @@
 // src/controllers/media.controller.ts
 import { Request, Response } from "express";
 import { MediaService } from "../services/media.service";
+import { verifyToken } from "../utils/jwt";
 
 export const MediaController = {
+  async uploadLanding(req: Request, res: Response) {
+    try {
+      const token = req.cookies?.access_token;
+      if (!token) return res.status(401).json({ status: 401, message: "Unauthenticated", data: null });
+
+      const payload = verifyToken(token);
+      if (payload.role !== "ADMIN") return res.status(403).json({ status: 403, message: "Forbidden: Admin only", data: null });
+
+      if (!payload.tenantId) return res.status(400).json({ status: 400, message: "User has no tenant", data: null });
+
+      const { type } = req.body;
+      if (!type) return res.status(400).json({ status: 400, message: "type is required", data: null });
+
+      const result = await MediaService.uploadLandingImage(req.file!, type, payload.tenantId);
+      return res.status(result.status).json(result);
+    } catch (error: any) {
+      console.error(error);
+      const status = error.statusCode || 500;
+      return res.status(status).json({ status, message: error.message || "Failed to upload image", data: null });
+    }
+  },
   async create(req: Request, res: Response) {
     try {
       const { url, filename, mimeType, size, type, referenceId } = req.body;

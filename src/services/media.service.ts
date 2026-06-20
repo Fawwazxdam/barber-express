@@ -2,6 +2,28 @@
 import { MediaRepository } from "../db/media.repository";
 
 export const MediaService = {
+  async uploadLandingImage(file: Express.Multer.File, type: string, tenantId: string) {
+    if (!file) {
+      return { status: 400, message: "File is required" };
+    }
+
+    if (!["tenant-hero", "tenant-gallery"].includes(type)) {
+      return { status: 400, message: "Invalid type. Must be 'tenant-hero' or 'tenant-gallery'" };
+    }
+
+    const url = `/uploads/${file.filename}`;
+
+    const result = await MediaRepository.create({
+      url,
+      filename: file.filename,
+      mimeType: file.mimetype,
+      size: file.size,
+      type,
+      referenceId: tenantId,
+    });
+
+    return { status: 201, data: result[0] };
+  },
   async createMedia(dto: {
     url: string;
     filename?: string;
