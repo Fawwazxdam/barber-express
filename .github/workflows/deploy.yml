@@ -39,7 +39,7 @@ jobs:
           port: 22
           script: |
             # Masuk ke folder root project di VPS
-            cd /projects/memangkas-barber
+            cd /home/magentaadam/projects/memangkas-barber
             
             # Tarik image backend terbaru
             docker compose pull backend
