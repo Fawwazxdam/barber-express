@@ -8,6 +8,30 @@ import { eq } from "drizzle-orm";
 async function seed() {
   const password = await bcrypt.hash("password", 10);
 
+  // --- Seed Superadmin ---
+  const superadminEmail = "adamf@magentaa.space";
+  
+  const existingSuperadmin = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.email, superadminEmail))
+    .limit(1);
+
+  if (!existingSuperadmin[0]) {
+    const [superAdminUser] = await db.insert(schema.users).values({
+      name: "Adam (Super Admin)",
+      email: superadminEmail,
+      password,
+      role: "ADMIN",
+    }).returning();
+    if (superAdminUser) {
+        console.log(`Superadmin created successfully! (${superadminEmail})`);
+    }
+  } else {
+    console.log("Superadmin user already exists!");
+  }
+  // ----------------------
+
   // Check if admin user already exists
   const existingUser = await db
     .select()
@@ -63,9 +87,44 @@ async function seed() {
 
   // Insert plans
   const plansResult = await db.insert(schema.plans).values([
-    { name: "STARTER", price: 99000, maxBarbers: 2, isActive: true },
-    { name: "PROFESSIONAL", price: 199000, maxBarbers: 5, isActive: true },
-    { name: "ENTERPRISE", price: 399000, maxBarbers: 999, isActive: true },
+    { 
+      name: "STARTER", 
+      price: 99000, 
+      maxBarbers: 2, 
+      isActive: true,
+      features: [
+        "Maksimal 2 Kapster",
+        "Link Booking Mandiri",
+        "Dashboard Admin Utama"
+      ],
+      isPopular: false
+    },
+    { 
+      name: "PROFESSIONAL", 
+      price: 199000, 
+      maxBarbers: 5, 
+      isActive: true,
+      features: [
+        "Maksimal 5 Kapster",
+        "Notifikasi WhatsApp",
+        "Dashboard Kapster Pribadi",
+        "Laporan Pendapatan Harian"
+      ],
+      isPopular: true
+    },
+    { 
+      name: "ENTERPRISE", 
+      price: 399000, 
+      maxBarbers: 999, 
+      isActive: true,
+      features: [
+        "Kapster Tanpa Batas",
+        "Dukungan Multi-Cabang",
+        "Custom Logo & Tema",
+        "Ekspor Laporan Excel/CSV"
+      ],
+      isPopular: false
+    },
   ]).returning();
 
   const starterPlan = plansResult[0];
@@ -147,6 +206,7 @@ async function seed() {
   ]);
 
   console.log("Seed data created successfully!");
+  console.log(`- Superadmin: adamf@magentaa.space (password: password)`);
   console.log("- Tenant: Barber Express");
   console.log("- Admin: admin@barber.com (password: password)");
   console.log("- Barber: barber@barber.com (password: password)");

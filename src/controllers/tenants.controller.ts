@@ -21,8 +21,10 @@ export const TenantsController = {
       const data = await TenantsService.getTenantById(id);
       return res.status(200).json({ status: 200, message: "Success fetch tenant", data });
     } catch (error: any) {
-      console.error(error);
       const status = error.statusCode || 500;
+      if (status !== 404) {
+        console.error(error);
+      }
       return res.status(status).json({ status, message: error.message || "Failed to fetch tenant", data: null });
     }
   },
@@ -33,8 +35,10 @@ export const TenantsController = {
       const data = await TenantsService.getTenantBySlug(slug);
       return res.status(200).json({ status: 200, message: "Success fetch tenant", data });
     } catch (error: any) {
-      console.error(error);
       const status = error.statusCode || 500;
+      if (status !== 404) {
+        console.error(error);
+      }
       return res.status(status).json({ status, message: error.message || "Failed to fetch tenant", data: null });
     }
   },

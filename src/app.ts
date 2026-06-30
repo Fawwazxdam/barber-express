@@ -21,7 +21,9 @@ app.use(
   cors({
     origin: [
       process.env.CLIENT_URL || "",
-      "http://localhost:3000"
+      "http://localhost:3000",
+      "http://memangkas.test:3000",
+      "http://app.memangkas.test:3000"
     ],
     credentials: true,
   })
